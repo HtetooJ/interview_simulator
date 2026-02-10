@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #4F7D6B;
+  --secondary: #7A9C8B;
+  --surface: #FFFFFF;
+  --text-primary: #1F2933;
+  --text-secondary: #6B7280;
+  --border: #E5E7EB;
+  --success: #6FAF91;
+  --warning: #E6B566;
+  --error: #E08A8A;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+
+
+@layer base {
+  :root {
+    --background: 247 8% 97%; /* #F7F8F7 */
+    --foreground: 210 20% 19%; /* #1F2933 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 210 20% 19%; /* #1F2933 */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 210 20% 19%; /* #1F2933 */
+    --primary: 158 25% 42%; /* #4F7D6B */
+    --primary-foreground: 0 0% 100%; /* white */
+    --secondary: 158 18% 55%; /* #7A9C8B */
+    --secondary-foreground: 0 0% 100%; /* white */
+    --muted: 220 13% 91%; /* #E5E7EB */
+    --muted-foreground: 215 16% 47%; /* #6B7280 */
+    --accent: 158 18% 55%; /* #7A9C8B */
+    --accent-foreground: 0 0% 100%; /* white */
+    --destructive: 0 58% 72%; /* #E08A8A */
+    --destructive-foreground: 0 0% 100%; /* white */
+    --border: 220 13% 91%; /* #E5E7EB */
+    --input: 220 13% 91%; /* #E5E7EB */
+    --ring: 158 25% 42%; /* #4F7D6B */
+    --chart-1: 158 25% 42%;
+    --chart-2: 158 18% 55%;
+    --chart-3: 158 40% 60%; /* #6FAF91 */
+    --chart-4: 38 70% 66%; /* #E6B566 */
+    --chart-5: 0 58% 72%; /* #E08A8A */
+    --radius: 0.875rem; /* 14px - medium radius */
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Ensure all primary buttons have white text */
+  button[class*="bg-[#4F7D6B]"],
+  button.bg-primary,
+  [class*="bg-[#4F7D6B]"] {
+    color: white !important;
+  }
+}
