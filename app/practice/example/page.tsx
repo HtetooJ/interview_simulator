@@ -181,22 +181,19 @@ function ExamplePageContent() {
         </div>
 
         {/* Audio and Start Practice Buttons */}
-        <div className="flex gap-16 justify-center items-center flex-wrap">
+        <div className="flex flex-wrap gap-16 justify-center items-center">
           <button
+            type="button"
             onClick={isPlaying ? handlePause : handlePlay}
-            className="relative flex items-center justify-center w-[88px] h-[88px] rounded-full bg-[#7A9C8B] hover:bg-[#7A9C8B]/90 text-white shadow-subtle focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors overflow-hidden"
+            className="flex shrink-0 items-center justify-center gap-12 h-48 w-[180px] min-w-[180px] min-h-48 px-32 rounded-medium bg-[#4F7D6B] hover:bg-[#4F7D6B]/90 text-white shadow-medium border-2 border-[#4F7D6B] focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors relative z-10 text-16 font-medium"
             aria-label={isPlaying ? "Pause" : "Play Example"}
           >
-            {isPlaying && (
-              <span className="absolute inset-0 bg-[#4F7D6B] animate-pulse" aria-hidden />
+            {isPlaying ? (
+              <Pause className="h-[16px] w-[16px] shrink-0" />
+            ) : (
+              <Play className="h-[16px] w-[16px] ml-0.5 shrink-0" />
             )}
-            <span className="relative z-10">
-              {isPlaying ? (
-                <Pause className="h-10 w-10" />
-              ) : (
-                <Play className="h-10 w-10 ml-0.5" />
-              )}
-            </span>
+            <span className="whitespace-nowrap">{isPlaying ? "Pause" : "Play Example"}</span>
           </button>
           <Button
             onClick={handleStartPractice}

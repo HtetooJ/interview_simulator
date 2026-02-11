@@ -6,6 +6,7 @@ import { questions } from "@/data/questions";
 import { FeedbackDisplay } from "./components/FeedbackDisplay";
 import { AudioPlayer } from "./components/AudioPlayer";
 import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
 import { trackPageView } from "@/lib/analytics";
 
 interface Feedback {
@@ -52,9 +53,6 @@ function PracticePageContent() {
       
       // Retrieve audio URL from sessionStorage
       const storedAudioUrl = sessionStorage.getItem(`audio_${idx}`);
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'practice/page.tsx:54',message:'retrieving audio from sessionStorage',data:{hasAudioUrl:!!storedAudioUrl,audioUrlLength:storedAudioUrl?.length,audioUrlPrefix:storedAudioUrl?.substring(0,50)},timestamp:Date.now(),hypothesisId:'AUDIO3'})}).catch(()=>{});
-      // #endregion
       if (storedAudioUrl) {
         setAudioUrl(storedAudioUrl);
         // Clean up sessionStorage
@@ -123,12 +121,8 @@ function PracticePageContent() {
             <FeedbackDisplay feedback={feedback} />
             
             {/* Action Buttons */}
-            <div className="flex gap-16 justify-center items-center flex-wrap">
-              {audioUrl && (
-                <AudioPlayer audioUrl={audioUrl} />
-              )}
+            <div className="flex flex-wrap gap-16 justify-center items-center">
               {feedback.score !== undefined && feedback.score < 70 ? (
-                // Score < 70%: Show only Practice Again as primary
                 <Button
                   onClick={handlePracticeAgain}
                   className="bg-[#4F7D6B] text-white hover:bg-[#4F7D6B]/90 h-48 px-32 text-16 rounded-medium font-medium"
@@ -136,7 +130,6 @@ function PracticePageContent() {
                   Practice Again
                 </Button>
               ) : (
-                // Score >= 70%: Show both buttons
                 <>
                   <Button
                     onClick={handlePracticeAgain}
@@ -153,6 +146,18 @@ function PracticePageContent() {
                     Next Question
                   </Button>
                 </>
+              )}
+              {audioUrl ? (
+                <AudioPlayer audioUrl={audioUrl} />
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex shrink-0 items-center justify-center h-48 w-[48px] min-w-[48px] min-h-48 rounded-medium bg-[#7A9C8B]/50 text-white/80 shadow-medium border-2 border-[#4F7D6B]/50 cursor-not-allowed relative z-10"
+                  aria-label="Play recording (no audio available)"
+                >
+                  <Play className="h-[16px] w-[16px] ml-0.5" />
+                </button>
               )}
             </div>
           </>

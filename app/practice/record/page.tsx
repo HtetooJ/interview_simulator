@@ -55,10 +55,6 @@ function RecordPageContent() {
     score?: number;
     feedbackMessage?: string;
   }) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'record/page.tsx:58',message:'handleFeedbackReceived entry',data:{hasAudioBlob:!!(audioBlobRef.current||audioBlob),blobSize:(audioBlobRef.current||audioBlob)?.size},timestamp:Date.now(),hypothesisId:'AUDIO1'})}).catch(()=>{});
-    // #endregion
-    
     // Store feedback in sessionStorage to pass back to practice page
     sessionStorage.setItem(
       `feedback_${currentIndex}`,
@@ -69,33 +65,19 @@ function RecordPageContent() {
     // Use ref to ensure we have the latest blob even if state hasn't updated
     const blobToStore = audioBlobRef.current || audioBlob;
     if (blobToStore) {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'record/page.tsx:74',message:'starting blob conversion',data:{blobType:blobToStore.type,blobSize:blobToStore.size},timestamp:Date.now(),hypothesisId:'AUDIO2'})}).catch(()=>{});
-      // #endregion
-      
       // Convert blob to data URL so it works across page navigations
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'record/page.tsx:82',message:'blob converted to dataURL',data:{dataUrlLength:dataUrl?.length,dataUrlPrefix:dataUrl?.substring(0,50)},timestamp:Date.now(),hypothesisId:'AUDIO2'})}).catch(()=>{});
-        // #endregion
         sessionStorage.setItem(`audio_${currentIndex}`, dataUrl);
         
         // Navigate back to practice page after audio is stored
         const queryString = questionIds.join(",");
         router.push(`/practice?questions=${queryString}&index=${currentIndex}&completed=true`);
       };
-      reader.onerror = () => {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'record/page.tsx:90',message:'FileReader error',data:{error:reader.error},timestamp:Date.now(),hypothesisId:'AUDIO2'})}).catch(()=>{});
-        // #endregion
-      };
+      reader.onerror = () => {};
       reader.readAsDataURL(blobToStore);
     } else {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/bb2f5fb2-6d52-4f1d-90a7-7f662f7d7877',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'record/page.tsx:96',message:'no audio blob',data:{},timestamp:Date.now(),hypothesisId:'AUDIO1'})}).catch(()=>{});
-      // #endregion
       // No audio blob, navigate anyway
       const queryString = questionIds.join(",");
       router.push(`/practice?questions=${queryString}&index=${currentIndex}&completed=true`);
@@ -134,47 +116,47 @@ function RecordPageContent() {
 
         {/* STAR Answer Boxes */}
         <div className="space-y-12 mb-32">
-          <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
+          <div className="space-y-8">
+            <label className="text-14 font-medium text-text-primary block">
               Situation
             </label>
             <textarea
               value={situation}
               onChange={(e) => setSituation(e.target.value)}
-              className="text-16 text-text-secondary whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-y-auto min-h-[80px]"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 h-[100px] placeholder:text-[#6B7280]"
               placeholder="Describe the situation..."
             />
           </div>
-          <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
+          <div className="space-y-8">
+            <label className="text-14 font-medium text-text-primary block">
               Task
             </label>
             <textarea
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              className="text-16 text-text-secondary whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-y-auto min-h-[80px]"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 h-[100px] placeholder:text-[#6B7280]"
               placeholder="What was your goal or responsibility?"
             />
           </div>
-          <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
+          <div className="space-y-8">
+            <label className="text-14 font-medium text-text-primary block">
               Action
             </label>
             <textarea
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              className="text-16 text-text-secondary whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-y-auto min-h-[80px]"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 h-[100px] placeholder:text-[#6B7280]"
               placeholder="What did you do?"
             />
           </div>
-          <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
+          <div className="space-y-8">
+            <label className="text-14 font-medium text-text-primary block">
               Result
             </label>
             <textarea
               value={result}
               onChange={(e) => setResult(e.target.value)}
-              className="text-16 text-text-secondary whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-y-auto min-h-[80px]"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-[#4F7D6B]/10 border border-[#4F7D6B]/20 rounded-medium p-16 w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 h-[100px] placeholder:text-[#6B7280]"
               placeholder="What was the outcome?"
             />
           </div>

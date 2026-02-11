@@ -28,7 +28,6 @@ function dataUrlToBlobUrl(dataUrl: string): string {
 
 export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -53,7 +52,6 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     audioRef.current = audio;
 
     // Set up event listeners
-    const updateTime = () => setCurrentTime(audio.currentTime);
     const trySetDuration = () => {
       if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
@@ -62,7 +60,6 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     };
     const handleEnded = () => {
       setIsPlaying(false);
-      setCurrentTime(0);
       // Some formats only report correct duration after full playback
       trySetDuration();
     };
@@ -71,7 +68,6 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
       console.error("Error loading audio");
     };
 
-    audio.addEventListener("timeupdate", updateTime);
     // loadedmetadata is the standard event, but some formats (webm blobs)
     // may not fire it reliably — listen to multiple events as fallback
     audio.addEventListener("loadedmetadata", trySetDuration);
@@ -82,7 +78,6 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
 
     // Cleanup
     return () => {
-      audio.removeEventListener("timeupdate", updateTime);
       audio.removeEventListener("loadedmetadata", trySetDuration);
       audio.removeEventListener("canplaythrough", trySetDuration);
       audio.removeEventListener("durationchange", trySetDuration);
@@ -110,29 +105,19 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     }
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-
   return (
     <button
+      type="button"
       onClick={togglePlayPause}
       disabled={isLoading}
-      className="relative flex items-center justify-center w-[88px] h-[88px] rounded-full bg-[#7A9C8B] hover:bg-[#7A9C8B]/90 text-white shadow-subtle focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors overflow-hidden disabled:opacity-50"
+      className="flex shrink-0 items-center justify-center h-48 w-[48px] min-w-[48px] min-h-48 rounded-medium bg-[#7A9C8B] hover:bg-[#7A9C8B]/90 text-white shadow-medium border-2 border-[#4F7D6B] focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors disabled:opacity-50 relative z-10"
       aria-label={isPlaying ? "Pause" : "Play"}
     >
-      {duration > 0 && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 bg-[#4F7D6B] transition-[width] duration-100"
-          style={{ width: `${progress}%` }}
-        />
+      {isPlaying ? (
+        <Pause className="h-[16px] w-[16px]" />
+      ) : (
+        <Play className="h-[16px] w-[16px] ml-0.5" />
       )}
-      <span className="relative z-10 flex items-center justify-center">
-        {isPlaying ? (
-          <Pause className="h-12 w-12" />
-        ) : (
-          <Play className="h-12 w-12 ml-0.5" />
-        )}
-      </span>
     </button>
   );
 }

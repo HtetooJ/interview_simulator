@@ -85,10 +85,23 @@ a {
 }
 
 @layer utilities {
-  /* Ensure all primary buttons have white text */
+  /* Ensure all primary buttons have white text - exclude textareas which use accent bg */
   button[class*="bg-[#4F7D6B]"],
   button.bg-primary,
-  [class*="bg-[#4F7D6B]"] {
+  [class*="bg-[#4F7D6B]"]:not(textarea) {
     color: white !important;
   }
+}
+
+/* Recording page textareas - match example page text color (#6B7280) */
+textarea[class*="bg-[#4F7D6B]"] {
+  color: #6B7280 !important;
+}
+
+/* Force playback button visibility - ensure it's never hidden */
+button[aria-label*="Play"],
+button[aria-label*="Pause"] {
+  visibility: visible !important;
+  display: flex !important;
+  opacity: 1 !important;
 }

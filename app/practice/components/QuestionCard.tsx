@@ -12,7 +12,7 @@ export function QuestionCard({
           Question {questionNumber}
         </p>
       )}
-      <h2 className="text-24 font-normal text-text-primary">{question}</h2>
+      <h2 className="text-16 font-normal text-text-primary">{question}</h2>
     </div>
   );
 }
