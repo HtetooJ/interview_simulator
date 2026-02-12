@@ -40,6 +40,7 @@ export function RecordingControls({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const stopRecognitionRef = useRef<(() => void) | null>(null);
   const transcriptRef = useRef<string>("");
+  const recordingDurationRef = useRef(0);
   const onTimeUpdateRef = useRef(onTimeUpdate);
   const [time, setTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,7 +54,11 @@ export function RecordingControls({
   useEffect(() => {
     if (isRecording) {
       intervalRef.current = setInterval(() => {
-        setTime((prev) => prev + 1);
+        setTime((prev) => {
+          const next = prev + 1;
+          recordingDurationRef.current = next;
+          return next;
+        });
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -127,14 +132,37 @@ export function RecordingControls({
           streamRef.current = null;
         }
 
-        // Analyze and generate feedback
+        // Analyze and generate feedback (Azure Speech API with browser fallback)
         setIsProcessing(true);
         try {
-          const transcription = transcriptRef.current;
+          let transcription = transcriptRef.current;
+
+          // Try Azure Speech API first for more accurate transcription
+          try {
+            const response = await fetch("/api/speech", {
+              method: "POST",
+              body: blob,
+            });
+            let data: { transcript?: string } = {};
+            try {
+              data = await response.json();
+            } catch {
+              console.warn("Azure Speech API returned invalid JSON");
+            }
+            if (data.transcript && data.transcript.trim()) {
+              transcription = data.transcript;
+            } else if (!response.ok) {
+              console.warn("Azure Speech API error:", response.status, data);
+            }
+          } catch (azureError) {
+            console.warn("Azure Speech API failed, using browser transcription:", azureError);
+          }
+
+          const durationSeconds = recordingDurationRef.current;
           const feedback = generateFeedback(
             transcription,
             question.keyContentSignals,
-            time
+            durationSeconds
           );
           onFeedback(feedback);
         } catch (error) {
@@ -150,11 +178,13 @@ export function RecordingControls({
         } finally {
           setIsProcessing(false);
           transcriptRef.current = "";
+          recordingDurationRef.current = 0;
         }
       };
 
       mediaRecorder.start();
-      
+      recordingDurationRef.current = 0;
+
       // Start speech recognition
       const stopRecognition = startSpeechRecognition(
         (text) => {

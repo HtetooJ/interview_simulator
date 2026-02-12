@@ -110,13 +110,19 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
       type="button"
       onClick={togglePlayPause}
       disabled={isLoading}
-      className="flex shrink-0 items-center justify-center h-48 w-[48px] min-w-[48px] min-h-48 rounded-medium bg-[#7A9C8B] hover:bg-[#7A9C8B]/90 text-white shadow-medium border-2 border-[#4F7D6B] focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors disabled:opacity-50 relative z-10"
-      aria-label={isPlaying ? "Pause" : "Play"}
+      className="flex shrink-0 items-center justify-center h-48 px-32 rounded-medium bg-transparent border-2 border-[#4F7D6B] !text-black hover:bg-primary/10 text-16 font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors disabled:opacity-50 relative z-10 [&_svg]:!text-black"
+      aria-label={isPlaying ? "Pause" : "Listen"}
     >
       {isPlaying ? (
-        <Pause className="h-[16px] w-[16px]" />
+        <>
+          <Pause className="mr-8 h-5 w-5" />
+          Pause
+        </>
       ) : (
-        <Play className="h-[16px] w-[16px] ml-0.5" />
+        <>
+          <Play className="mr-8 h-5 w-5" />
+          Listen.
+        </>
       )}
     </button>
   );

@@ -153,10 +153,11 @@ function PracticePageContent() {
                 <button
                   type="button"
                   disabled
-                  className="flex shrink-0 items-center justify-center h-48 w-[48px] min-w-[48px] min-h-48 rounded-medium bg-[#7A9C8B]/50 text-white/80 shadow-medium border-2 border-[#4F7D6B]/50 cursor-not-allowed relative z-10"
+                  className="flex shrink-0 items-center justify-center h-48 px-32 rounded-medium bg-transparent border-2 border-[#4F7D6B]/50 !text-black/60 text-16 font-medium cursor-not-allowed relative z-10 opacity-60 [&_svg]:!text-black/60"
                   aria-label="Play recording (no audio available)"
                 >
-                  <Play className="h-[16px] w-[16px] ml-0.5" />
+                  <Play className="mr-8 h-5 w-5" />
+                  Listen.
                 </button>
               )}
             </div>
