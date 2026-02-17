@@ -7,6 +7,16 @@ import { InterviewQuestion } from "@/data/questions";
 import { startSpeechRecognition } from "@/lib/speech-analysis";
 import { generateFeedback } from "@/lib/feedback-generator";
 
+type ProcessingStage = "analyzing_audio" | "analyzing_audio_exiting" | "analyzing_by_experts" | "concluding" | null;
+
+interface FeedbackResult {
+  effortDelivery: string;
+  contentSignals: string;
+  improvementHint: string;
+  score?: number;
+  feedbackMessage?: string;
+}
+
 interface RecordingControlsProps {
   isRecording: boolean;
   onStart: () => void;
@@ -43,8 +53,11 @@ export function RecordingControls({
   const recordingDurationRef = useRef(0);
   const onTimeUpdateRef = useRef(onTimeUpdate);
   const [time, setTime] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>(null);
   const [permissionError, setPermissionError] = useState<string | null>(null);
+  const feedbackRef = useRef<FeedbackResult | null>(null);
+  const [feedbackReady, setFeedbackReady] = useState(false);
+  const stageTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
   // Keep the callback ref updated
   useEffect(() => {
@@ -81,6 +94,38 @@ export function RecordingControls({
   useEffect(() => {
     onTimeUpdateRef.current(time);
   }, [time]);
+
+  // Clear stage timeouts on unmount
+  useEffect(() => {
+    return () => {
+      stageTimeoutsRef.current.forEach(clearTimeout);
+      stageTimeoutsRef.current = [];
+    };
+  }, []);
+
+  // Call onFeedback when concluding stage is reached and feedback is ready (min 0.5s for stage 3)
+  const concludingStartRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (processingStage !== "concluding" || !feedbackReady) return;
+
+    const minStage3Ms = 500;
+    const elapsed = concludingStartRef.current ? Date.now() - concludingStartRef.current : 0;
+    const remaining = Math.max(0, minStage3Ms - elapsed);
+
+    const t = setTimeout(() => {
+      const feedback = feedbackRef.current;
+      if (feedback) {
+        onFeedback(feedback);
+        feedbackRef.current = null;
+      }
+      setProcessingStage(null);
+      setFeedbackReady(false);
+      transcriptRef.current = "";
+      recordingDurationRef.current = 0;
+    }, remaining);
+
+    return () => clearTimeout(t);
+  }, [processingStage, feedbackReady, onFeedback]);
 
   const startRecording = async () => {
     try {
@@ -132,54 +177,64 @@ export function RecordingControls({
           streamRef.current = null;
         }
 
-        // Analyze and generate feedback (Azure Speech API with browser fallback)
-        setIsProcessing(true);
-        try {
-          let transcription = transcriptRef.current;
+        // Start staged processing animation
+        feedbackRef.current = null;
+        setProcessingStage("analyzing_audio");
 
-          // Try Azure Speech API first for more accurate transcription
+        // Stage timing: 1s -> exiting (0.3s) -> analyzing_by_experts, 0.5s more -> concluding
+        const t1 = setTimeout(() => setProcessingStage("analyzing_audio_exiting"), 1000);
+        const t2 = setTimeout(() => setProcessingStage("analyzing_by_experts"), 1300);
+        const t3 = setTimeout(() => {
+          concludingStartRef.current = Date.now();
+          setProcessingStage("concluding");
+        }, 1800);
+        stageTimeoutsRef.current = [t1, t2, t3];
+
+        // Run analysis in parallel - store result in ref, onFeedback called by effect when concluding
+        (async () => {
           try {
-            const response = await fetch("/api/speech", {
-              method: "POST",
-              body: blob,
-            });
-            let data: { transcript?: string } = {};
-            try {
-              data = await response.json();
-            } catch {
-              console.warn("Azure Speech API returned invalid JSON");
-            }
-            if (data.transcript && data.transcript.trim()) {
-              transcription = data.transcript;
-            } else if (!response.ok) {
-              console.warn("Azure Speech API error:", response.status, data);
-            }
-          } catch (azureError) {
-            console.warn("Azure Speech API failed, using browser transcription:", azureError);
-          }
+            let transcription = transcriptRef.current;
 
-          const durationSeconds = recordingDurationRef.current;
-          const feedback = generateFeedback(
-            transcription,
-            question.keyContentSignals,
-            durationSeconds
-          );
-          onFeedback(feedback);
-        } catch (error) {
-          console.error("Error analyzing speech:", error);
-          // Provide fallback feedback
-          onFeedback({
-            effortDelivery: "Thank you for recording your answer.",
-            contentSignals: "I'm processing your response.",
-            improvementHint: "Try to speak clearly and include your experience.",
-            score: 0,
-            feedbackMessage: "Sounds not detected",
-          });
-        } finally {
-          setIsProcessing(false);
-          transcriptRef.current = "";
-          recordingDurationRef.current = 0;
-        }
+            try {
+              const response = await fetch("/api/speech", {
+                method: "POST",
+                body: blob,
+              });
+              let data: { transcript?: string } = {};
+              try {
+                data = await response.json();
+              } catch {
+                console.warn("Azure Speech API returned invalid JSON");
+              }
+              if (data.transcript && data.transcript.trim()) {
+                transcription = data.transcript;
+              } else if (!response.ok) {
+                console.warn("Azure Speech API error:", response.status, data);
+              }
+            } catch (azureError) {
+              console.warn("Azure Speech API failed, using browser transcription:", azureError);
+            }
+
+            const durationSeconds = recordingDurationRef.current;
+            const feedback = generateFeedback(
+              transcription,
+              question.keyContentSignals,
+              durationSeconds
+            );
+            feedbackRef.current = feedback;
+            setFeedbackReady(true);
+          } catch (error) {
+            console.error("Error analyzing speech:", error);
+            feedbackRef.current = {
+              effortDelivery: "Thank you for recording your answer.",
+              contentSignals: "I'm processing your response.",
+              improvementHint: "Try to speak clearly and include your experience.",
+              score: 0,
+              feedbackMessage: "Sounds not detected",
+            };
+            setFeedbackReady(true);
+          }
+        })();
       };
 
       mediaRecorder.start();
@@ -241,11 +296,42 @@ export function RecordingControls({
     startRecording();
   };
 
-  if (isProcessing) {
+  if (processingStage) {
     return (
-      <div className="text-center py-24">
-        <p className="text-16 text-text-secondary">Processing your answer...</p>
-        <p className="text-14 text-text-secondary mt-8">This may take a few seconds.</p>
+      <div className="flex flex-col items-center justify-center py-24 min-h-[2rem] overflow-hidden">
+        <div className="relative min-h-12 flex items-center justify-center w-full max-w-full">
+          {(processingStage === "analyzing_audio" || processingStage === "analyzing_audio_exiting") && (
+            <p
+              className={`text-16 text-[#4F7D6B] whitespace-nowrap ${
+                processingStage === "analyzing_audio" ? "animate-text-shimmer" : "animate-slide-out-down"
+              }`}
+            >
+              Analyzing audio
+            </p>
+          )}
+          {processingStage === "analyzing_by_experts" && (
+            <div className="flex items-center justify-center gap-8 whitespace-nowrap animate-slide-in-from-above">
+              <span className="text-16 animate-text-shimmer inline-block">
+                LinkedIn
+              </span>
+              <img
+                src="/linkedin-logo.png"
+                alt="LinkedIn"
+                className="h-5 w-5 shrink-0"
+                width={20}
+                height={20}
+              />
+              <span className="text-16 animate-text-shimmer inline-block">
+                Analyzing by experts
+              </span>
+            </div>
+          )}
+          {processingStage === "concluding" && (
+            <p className="text-16 text-[#4F7D6B] whitespace-nowrap animate-text-shimmer">
+              Concluding your audio
+            </p>
+          )}
+        </div>
       </div>
     );
   }

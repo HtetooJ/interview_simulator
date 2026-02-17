@@ -76,7 +76,12 @@ function PracticePageContent() {
 
   const handlePracticeAgain = () => {
     const queryString = questionIds.join(",");
-    router.push(`/practice/record?questions=${queryString}&index=${currentIndex}`);
+    const mode = sessionStorage.getItem("practice_mode");
+    if (mode === "guided" || mode === "audio") {
+      router.push(`/practice/audio?questions=${queryString}&index=${currentIndex}`);
+    } else {
+      router.push(`/practice/record?questions=${queryString}&index=${currentIndex}`);
+    }
   };
 
   const handleNextQuestion = () => {
@@ -84,10 +89,19 @@ function PracticePageContent() {
     const nextIndex = currentIndex + 1;
     
     if (nextIndex < selectedQuestions.length) {
-      // Navigate to next question's example page
-      router.push(`/practice/example?questions=${queryString}&index=${nextIndex}`);
+      // Route directly to the next question in the same mode chosen at the start
+      const mode = sessionStorage.getItem("practice_mode");
+      if (mode === "guided") {
+        router.push(`/practice/build/situation?questions=${queryString}&index=${nextIndex}`);
+      } else if (mode === "quick") {
+        router.push(`/practice/record?questions=${queryString}&index=${nextIndex}`);
+      } else if (mode === "audio") {
+        router.push(`/practice/audio?questions=${queryString}&index=${nextIndex}`);
+      } else {
+        // Fallback if mode was cleared (e.g. new tab)
+        router.push(`/practice/mode?questions=${queryString}&index=${nextIndex}`);
+      }
     } else {
-      // Navigate to complete page if it's the last question
       router.push("/complete");
     }
   };
