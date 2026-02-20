@@ -25,7 +25,7 @@ export default function SelectPage() {
   const handleStartPractice = () => {
     if (selectedIds.length > 0) {
       const queryString = selectedIds.join(",");
-      router.push(`/practice/record?questions=${queryString}&index=0`);
+      router.push(`/practice/mode?questions=${queryString}&index=0`);
     }
   };
 
@@ -52,7 +52,7 @@ export default function SelectPage() {
           {questions.map((question, index) => (
             <div
               key={question.id}
-              className="bg-surface border-[0.5px] border-border rounded-medium p-24 shadow-subtle"
+              className="bg-surface rounded-medium p-24 shadow-medium"
             >
               <div className="flex items-start gap-16">
                 <Checkbox

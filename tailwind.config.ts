@@ -67,8 +67,8 @@ const config: Config = {
   		},
   		boxShadow: {
   			subtle: '0 1px 2px rgba(0,0,0,0.04)',
-  			medium: '0 4px 12px rgba(0,0,0,0.08)',
-  			strong: '0 8px 24px rgba(0,0,0,0.12)'
+  			medium: '0 4px 16px rgba(0,0,0,0.10)',
+  			strong: '0 8px 28px rgba(0,0,0,0.15)'
   		},
   		spacing: {
   			'4': '4px',

@@ -48,9 +48,19 @@ export function startSpeechRecognition(
   recognition.onerror = (event: any) => {
     // Ignore "aborted" errors when we intentionally stopped recognition
     if (event.error === 'aborted' && isStopped) {
-      return; // Expected behavior when stopping recognition
+      return;
     }
-    
+    // Ignore "no-speech" - expected when user isn't talking; fires repeatedly during recording
+    if (event.error === 'no-speech') {
+      return;
+    }
+    // "audio-capture" occurs when MediaRecorder already holds the mic stream.
+    // The recording itself is unaffected; silence the restart loop and fall back
+    // to the Azure Speech API transcription.
+    if (event.error === 'audio-capture') {
+      isStopped = true;
+      return;
+    }
     console.error("Speech recognition error:", event.error);
     onError(event.error);
   };
