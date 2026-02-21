@@ -4,13 +4,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { questions } from "@/data/questions";
 import { QuestionCard } from "../components/QuestionCard";
-import { RecordingControls } from "../components/RecordingControls";
-import { Timer } from "../components/Timer";
+import { RecordingControls, type RecordingControlsHandle } from "../components/RecordingControls";
+import { ProcessingAnimation, type ProcessingStage } from "../components/ProcessingAnimation";
+import { StartRecordingCard } from "../components/StartRecordingCard";
 import { getDraft, saveDraft } from "@/lib/star-draft";
 import { trackPageView } from "@/lib/analytics";
 import { ChevronLeft } from "lucide-react";
-import { ScrollToRecordButton } from "../components/ScrollToRecordButton";
 import { RecordingAnimation } from "../components/RecordingAnimation";
+import { STARSectionLabel } from "../components/STARSectionLabel";
+import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 
 
 function AudioPageContent() {
@@ -29,19 +31,11 @@ function AudioPageContent() {
   const [result, setResult] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>(null);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const audioBlobRef = useRef<Blob | null>(null);
-  const situationRef = useRef<HTMLTextAreaElement | null>(null);
-  const taskRef = useRef<HTMLTextAreaElement | null>(null);
-  const actionRef = useRef<HTMLTextAreaElement | null>(null);
-  const resultRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const adjustTextareaHeight = (ref: React.RefObject<HTMLTextAreaElement | null>) => {
-    if (ref.current) {
-      ref.current.style.height = "auto";
-      ref.current.style.height = `${Math.max(100, ref.current.scrollHeight)}px`;
-    }
-  };
+  const recordingControlsRef = useRef<RecordingControlsHandle>(null);
 
   const saveToDraft = useCallback(() => {
     if (currentQuestion) {
@@ -90,12 +84,6 @@ function AudioPageContent() {
     trackPageView();
   }, []);
 
-  useEffect(() => {
-    adjustTextareaHeight(situationRef);
-    adjustTextareaHeight(taskRef);
-    adjustTextareaHeight(actionRef);
-    adjustTextareaHeight(resultRef);
-  }, [situation, task, action, result]);
 
   const handleRecordingComplete = (blob: Blob) => {
     setAudioBlob(blob);
@@ -153,7 +141,7 @@ function AudioPageContent() {
 
   return (
     <main className="min-h-screen bg-background flex flex-col p-16 md:p-24">
-      <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col gap-24 pb-[140px]">
+      <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col gap-24">
         <button
           onClick={handleBack}
           className="flex items-center gap-6 text-14 text-text-secondary hover:text-primary transition-colors self-start"
@@ -169,79 +157,85 @@ function AudioPageContent() {
           collapsible={true}
         />
 
-        {isRecording && <RecordingAnimation seconds={recordingTime} />}
+        <RecordingControls
+          ref={recordingControlsRef}
+          isRecording={isRecording}
+          onStart={() => setIsRecording(true)}
+          onStop={() => setIsRecording(false)}
+          onProcessingStageChange={setProcessingStage}
+          onPermissionError={setPermissionError}
+          onComplete={handleRecordingComplete}
+          onTimeUpdate={setRecordingTime}
+          onFeedback={handleFeedbackReceived}
+          question={currentQuestion}
+          headless
+        />
+        {!permissionError && isRecording && (
+          <RecordingAnimation
+            seconds={recordingTime}
+            onStopClick={() => recordingControlsRef.current?.stopRecording()}
+          />
+        )}
+        {!permissionError && processingStage && !isRecording && (
+          <ProcessingAnimation stage={processingStage} cardStyle />
+        )}
+        {!permissionError && !isRecording && !processingStage && (
+          <StartRecordingCard
+            onStartClick={() => recordingControlsRef.current?.startRecording()}
+          />
+        )}
 
         <div className="space-y-12">
           <div className="space-y-8">
-            <label className="text-14 font-medium text-text-primary block">
-              Situation
+            <label className="block">
+              <STARSectionLabel type="situation" />
             </label>
-            <textarea
-              ref={situationRef}
+            <AutoResizeTextarea
               value={situation}
               onChange={(e) => setSituation(e.target.value)}
-              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong min-h-[100px] overflow-hidden placeholder:text-[#6B7280]"
               placeholder="Describe the situation..."
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden leading-relaxed placeholder:text-[#6B7280]"
+              minHeight={56}
+              buffer={8}
             />
           </div>
           <div className="space-y-8">
-            <label className="text-14 font-medium text-text-primary block">
-              Task
+            <label className="block">
+              <STARSectionLabel type="task" />
             </label>
-            <textarea
-              ref={taskRef}
+            <AutoResizeTextarea
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong min-h-[100px] overflow-hidden placeholder:text-[#6B7280]"
               placeholder="What was your goal or responsibility?"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden leading-relaxed placeholder:text-[#6B7280]"
+              minHeight={56}
+              buffer={8}
             />
           </div>
           <div className="space-y-8">
-            <label className="text-14 font-medium text-text-primary block">
-              Action
+            <label className="block">
+              <STARSectionLabel type="action" />
             </label>
-            <textarea
-              ref={actionRef}
+            <AutoResizeTextarea
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong min-h-[100px] overflow-hidden placeholder:text-[#6B7280]"
               placeholder="What did you do?"
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden leading-relaxed placeholder:text-[#6B7280]"
+              minHeight={56}
+              buffer={8}
             />
           </div>
           <div className="space-y-8">
-            <label className="text-14 font-medium text-text-primary block">
-              Result
+            <label className="block">
+              <STARSectionLabel type="result" />
             </label>
-            <textarea
-              ref={resultRef}
+            <AutoResizeTextarea
               value={result}
               onChange={(e) => setResult(e.target.value)}
-              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong min-h-[100px] overflow-hidden placeholder:text-[#6B7280]"
               placeholder="What was the outcome?"
-            />
-          </div>
-
-          <ScrollToRecordButton />
-        </div>
-      </div>
-
-      <div id="recording-controls" className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto py-16 px-16 md:px-24">
-          {isRecording && (
-            <div className="text-center mb-12">
-              <Timer seconds={recordingTime} />
-            </div>
-          )}
-          <div className="flex flex-col items-center justify-center space-y-16">
-            <RecordingControls
-              isRecording={isRecording}
-              onStart={() => setIsRecording(true)}
-              onStop={() => setIsRecording(false)}
-              onComplete={handleRecordingComplete}
-              onTimeUpdate={setRecordingTime}
-              onFeedback={handleFeedbackReceived}
-              question={currentQuestion}
-              showText={true}
+              className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden leading-relaxed placeholder:text-[#6B7280]"
+              minHeight={56}
+              buffer={8}
             />
           </div>
         </div>

@@ -61,6 +61,11 @@ export function startSpeechRecognition(
       isStopped = true;
       return;
     }
+    // "network" - expected when offline or connectivity issues; fall back to Azure transcription
+    if (event.error === 'network') {
+      isStopped = true;
+      return;
+    }
     console.error("Speech recognition error:", event.error);
     onError(event.error);
   };

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { STARSectionLabel, type STARSectionType } from "./STARSectionLabel";
+import { AutoResizeTextarea } from "./AutoResizeTextarea";
 
 interface STARTextareaProps {
   label: string;
@@ -9,6 +10,7 @@ interface STARTextareaProps {
   placeholder?: string;
   minHeight?: number;
   showCharCount?: boolean;
+  starType?: STARSectionType;
 }
 
 export function STARTextarea({
@@ -18,32 +20,24 @@ export function STARTextarea({
   placeholder,
   minHeight = 150,
   showCharCount = false,
+  starType,
 }: STARTextareaProps) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const adjustHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(minHeight, textareaRef.current.scrollHeight)}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustHeight();
-  }, [value, minHeight]);
-
   return (
     <div className="space-y-8">
-      <label className="text-14 font-medium text-text-primary block">
-        {label}
+      <label className="block">
+        {starType ? (
+          <STARSectionLabel type={starType} />
+        ) : (
+          <span className="text-14 font-medium text-text-primary">{label}</span>
+        )}
       </label>
-      <textarea
-        ref={textareaRef}
+      <AutoResizeTextarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden placeholder:text-[#6B7280]"
-        style={{ minHeight: `${minHeight}px` }}
+        minHeight={minHeight}
+        buffer={8}
+        className="text-16 text-[#6B7280] whitespace-pre-wrap bg-white shadow-medium rounded-medium p-16 w-full resize-none focus:outline-none focus:shadow-strong overflow-hidden leading-relaxed placeholder:text-[#6B7280]"
       />
       {showCharCount && (
         <p className="text-14 text-text-secondary">

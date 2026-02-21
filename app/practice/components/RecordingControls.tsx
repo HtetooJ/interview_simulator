@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Square } from "lucide-react";
 import { InterviewQuestion } from "@/data/questions";
 import { startSpeechRecognition } from "@/lib/speech-analysis";
 import { generateFeedback } from "@/lib/feedback-generator";
-
-type ProcessingStage = "analyzing_audio" | "analyzing_audio_exiting" | "analyzing_by_experts" | "concluding" | null;
+import { ProcessingAnimation, type ProcessingStage } from "./ProcessingAnimation";
 
 interface FeedbackResult {
   effortDelivery: string;
@@ -32,9 +31,18 @@ interface RecordingControlsProps {
   }) => void;
   question: InterviewQuestion;
   showText?: boolean;
+  onProcessingStageChange?: (stage: ProcessingStage) => void;
+  onPermissionError?: (error: string | null) => void;
+  /** When true, only renders permission error UI; recording controls are handled by parent */
+  headless?: boolean;
 }
 
-export function RecordingControls({
+export interface RecordingControlsHandle {
+  startRecording: () => void;
+  stopRecording: () => void;
+}
+
+export const RecordingControls = forwardRef<RecordingControlsHandle, RecordingControlsProps>(function RecordingControls({
   isRecording,
   onStart,
   onStop,
@@ -43,7 +51,10 @@ export function RecordingControls({
   onFeedback,
   question,
   showText = false,
-}: RecordingControlsProps) {
+  onProcessingStageChange,
+  onPermissionError,
+  headless = false,
+}, ref) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -95,6 +106,16 @@ export function RecordingControls({
     onTimeUpdateRef.current(time);
   }, [time]);
 
+  // Notify parent of processing stage changes
+  useEffect(() => {
+    onProcessingStageChange?.(processingStage);
+  }, [processingStage, onProcessingStageChange]);
+
+  // Notify parent of permission error changes
+  useEffect(() => {
+    onPermissionError?.(permissionError);
+  }, [permissionError, onPermissionError]);
+
   // Clear stage timeouts on unmount
   useEffect(() => {
     return () => {
@@ -105,6 +126,7 @@ export function RecordingControls({
 
   // Call onFeedback when concluding stage is reached and feedback is ready (min 0.5s for stage 3)
   const concludingStartRef = useRef<number | null>(null);
+  const hasCalledOnFeedbackRef = useRef(false);
   useEffect(() => {
     if (processingStage !== "concluding" || !feedbackReady) return;
 
@@ -114,7 +136,8 @@ export function RecordingControls({
 
     const t = setTimeout(() => {
       const feedback = feedbackRef.current;
-      if (feedback) {
+      if (feedback && !hasCalledOnFeedbackRef.current) {
+        hasCalledOnFeedbackRef.current = true;
         onFeedback(feedback);
         feedbackRef.current = null;
       }
@@ -179,6 +202,7 @@ export function RecordingControls({
 
         // Start staged processing animation
         feedbackRef.current = null;
+        hasCalledOnFeedbackRef.current = false;
         setProcessingStage("analyzing_audio");
 
         // Stage timing: 1s -> exiting (0.3s) -> analyzing_by_experts, 0.5s more -> concluding
@@ -246,7 +270,10 @@ export function RecordingControls({
           transcriptRef.current = text;
         },
         (error) => {
-          console.error("Speech recognition error:", error);
+          // Only log unexpected errors; lib/speech-analysis filters no-speech, network, etc.
+          if (error !== "no-speech" && error !== "network") {
+            console.error("Speech recognition error:", error);
+          }
         }
       );
       stopRecognitionRef.current = stopRecognition;
@@ -291,53 +318,20 @@ export function RecordingControls({
     }
   };
 
+  useImperativeHandle(ref, () => ({ startRecording, stopRecording }), [isRecording]);
+
   const handleRetryPermission = () => {
     setPermissionError(null);
     startRecording();
   };
 
-  if (processingStage) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 min-h-[2rem] overflow-hidden">
-        <div className="relative min-h-12 flex items-center justify-center w-full max-w-full">
-          {(processingStage === "analyzing_audio" || processingStage === "analyzing_audio_exiting") && (
-            <p
-              className={`text-16 text-[#4F7D6B] whitespace-nowrap ${
-                processingStage === "analyzing_audio" ? "animate-text-shimmer" : "animate-slide-out-down"
-              }`}
-            >
-              Analyzing audio
-            </p>
-          )}
-          {processingStage === "analyzing_by_experts" && (
-            <div className="flex items-center justify-center gap-8 whitespace-nowrap animate-slide-in-from-above">
-              <span className="text-16 animate-text-shimmer inline-block">
-                LinkedIn
-              </span>
-              <img
-                src="/linkedin-logo.png"
-                alt="LinkedIn"
-                className="h-5 w-5 shrink-0"
-                width={20}
-                height={20}
-              />
-              <span className="text-16 animate-text-shimmer inline-block">
-                Analyzing by experts
-              </span>
-            </div>
-          )}
-          {processingStage === "concluding" && (
-            <p className="text-16 text-[#4F7D6B] whitespace-nowrap animate-text-shimmer">
-              Concluding your audio
-            </p>
-          )}
-        </div>
-      </div>
-    );
+  if (processingStage && !headless) {
+    return <ProcessingAnimation stage={processingStage} />;
   }
 
-  // Show permission error UI
-  if (permissionError) {
+  // Headless mode: parent handles recording UI; we only render permission error
+  if (headless) {
+    if (permissionError) {
     const getErrorMessage = () => {
       switch (permissionError) {
         case "permission-denied":
@@ -410,6 +404,8 @@ export function RecordingControls({
         </Button>
       </div>
     );
+    }
+    return null;
   }
 
   // New UI for recording screen
@@ -465,4 +461,4 @@ export function RecordingControls({
       )}
     </div>
   );
-}
+});
