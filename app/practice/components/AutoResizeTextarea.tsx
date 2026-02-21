@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useLayoutEffect, useCallback } from "react";
 
 interface AutoResizeTextareaProps
   extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "style"> {
@@ -31,9 +31,16 @@ export function AutoResizeTextarea({
     const mirror = mirrorRef.current;
     if (!textarea || !mirror) return;
 
+    // Use textarea's actual width (production layout may differ from dev)
+    const width = textarea.offsetWidth;
+    if (width <= 0) {
+      textarea.style.height = `${minHeight}px`;
+      return;
+    }
+
     // Copy styles that affect text layout
     const computed = getComputedStyle(textarea);
-    mirror.style.width = "100%";
+    mirror.style.width = `${width}px`;
     mirror.style.padding = computed.padding;
     mirror.style.font = computed.font;
     mirror.style.lineHeight = computed.lineHeight;
@@ -51,8 +58,12 @@ export function AutoResizeTextarea({
     textarea.style.height = `${height}px`;
   }, [value, minHeight, buffer]);
 
-  useEffect(() => {
+  // useLayoutEffect runs before paint - avoids flash of wrong height in production.
+  // Second rAF run catches cases where layout isn't ready on first paint (e.g. in flex containers).
+  useLayoutEffect(() => {
     adjustHeight();
+    const id = requestAnimationFrame(() => adjustHeight());
+    return () => cancelAnimationFrame(id);
   }, [value, adjustHeight]);
 
   return (
