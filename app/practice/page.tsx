@@ -76,12 +76,7 @@ function PracticePageContent() {
 
   const handlePracticeAgain = () => {
     const queryString = questionIds.join(",");
-    const mode = sessionStorage.getItem("practice_mode");
-    if (mode === "guided" || mode === "audio") {
-      router.push(`/practice/audio?questions=${queryString}&index=${currentIndex}`);
-    } else {
-      router.push(`/practice/record?questions=${queryString}&index=${currentIndex}`);
-    }
+    router.push(`/practice/audio?questions=${queryString}&index=${currentIndex}`);
   };
 
   const handleNextQuestion = () => {
@@ -93,8 +88,6 @@ function PracticePageContent() {
       const mode = sessionStorage.getItem("practice_mode");
       if (mode === "guided") {
         router.push(`/practice/build/situation?questions=${queryString}&index=${nextIndex}`);
-      } else if (mode === "quick") {
-        router.push(`/practice/record?questions=${queryString}&index=${nextIndex}`);
       } else if (mode === "audio") {
         router.push(`/practice/audio?questions=${queryString}&index=${nextIndex}`);
       } else {

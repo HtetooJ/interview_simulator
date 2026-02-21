@@ -81,7 +81,7 @@ function ModePageContent() {
         <div className="space-y-16">
           <button
             onClick={() => handleModeSelect("guided")}
-            className="w-full text-left bg-surface rounded-medium p-24 shadow-medium hover:shadow-strong transition-all group"
+            className="w-full text-left bg-surface rounded-medium p-24 shadow-medium-glow hover:shadow-strong-glow transition-all group"
           >
             <div className="flex items-start gap-16">
               <div className="flex-shrink-0 w-48 h-48 rounded-full bg-[#4F7D6B]/20 flex items-center justify-center group-hover:bg-[#4F7D6B]/30 transition-colors">
@@ -113,7 +113,7 @@ function ModePageContent() {
 
           <button
             onClick={() => handleModeSelect("audio")}
-            className="w-full text-left bg-surface rounded-medium p-24 shadow-medium hover:shadow-strong transition-all group"
+            className="w-full text-left bg-surface rounded-medium p-24 shadow-medium-glow hover:shadow-strong-glow transition-all group"
           >
             <div className="flex items-start gap-16">
               <div className="flex-shrink-0 w-48 h-48 rounded-full bg-[#4F7D6B]/20 flex items-center justify-center group-hover:bg-[#4F7D6B]/30 transition-colors">

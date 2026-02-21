@@ -44,7 +44,7 @@ export function QuestionCard({
   const needsTruncation = isCollapsed && question.length > truncateAt;
 
   return (
-    <div className="bg-[#4F7D6B] rounded-medium p-32 shadow-medium">
+    <div className="bg-[#4F7D6B] rounded-medium p-32 shadow-[0_4px_16px_rgba(0,0,0,0.15),0_0_24px_rgba(79,125,107,0.25)]">
       <div className="min-w-0">
         {questionNumber != null && (
           <p className="text-14 text-white/70 mb-8">

@@ -2,11 +2,13 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, Suspense } from "react";
+import { ChevronLeft } from "lucide-react";
 import { questions } from "@/data/questions";
 import { QuestionCard } from "../components/QuestionCard";
 import { Button } from "@/components/ui/button";
 import { Play, Pause } from "lucide-react";
 import { trackPageView } from "@/lib/analytics";
+import { STARSectionLabel } from "../components/STARSectionLabel";
 
 const PREFERRED_VOICE_NAMES = [
   "Google US English",
@@ -108,7 +110,7 @@ function ExamplePageContent() {
 
   const handleStartPractice = () => {
     const queryString = questionIds.join(",");
-    router.push(`/practice/record?questions=${queryString}&index=${currentIndex}`);
+    router.push(`/practice/mode?questions=${queryString}&index=${currentIndex}`);
   };
 
   if (!currentQuestion) {
@@ -130,6 +132,14 @@ function ExamplePageContent() {
   return (
     <main className="min-h-screen bg-background p-16 md:p-24">
       <div className="max-w-3xl mx-auto space-y-24">
+        <button
+          onClick={() => router.push(`/select`)}
+          className="flex items-center gap-6 text-14 text-text-secondary hover:text-primary transition-colors"
+          aria-label="Back"
+        >
+          <ChevronLeft className="h-16 w-16" />
+          Back
+        </button>
         <div className="text-center">
           <p className="text-14 text-text-secondary">
             Question {currentIndex + 1} of {selectedQuestions.length}
@@ -139,6 +149,7 @@ function ExamplePageContent() {
         <QuestionCard
           question={currentQuestion.question}
           questionNumber={currentIndex + 1}
+          collapsible={false}
         />
 
         {/* Example Answer - STAR Components */}
@@ -147,32 +158,32 @@ function ExamplePageContent() {
             Example Answer:
           </h3>
           <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
-              Situation
+            <label className="mb-8 block">
+              <STARSectionLabel type="situation" />
             </label>
             <p className="text-16 text-text-secondary whitespace-pre-wrap">
               {currentQuestion.situation}
             </p>
           </div>
           <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
-              Task
+            <label className="mb-8 block">
+              <STARSectionLabel type="task" />
             </label>
             <p className="text-16 text-text-secondary whitespace-pre-wrap">
               {currentQuestion.task}
             </p>
           </div>
           <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
-              Action
+            <label className="mb-8 block">
+              <STARSectionLabel type="action" />
             </label>
             <p className="text-16 text-text-secondary whitespace-pre-wrap">
               {currentQuestion.action}
             </p>
           </div>
           <div className="bg-[#4F7D6B]/10 rounded-medium p-16 border border-[#4F7D6B]/20">
-            <label className="text-14 font-medium text-text-primary mb-8 block">
-              Result
+            <label className="mb-8 block">
+              <STARSectionLabel type="result" />
             </label>
             <p className="text-16 text-text-secondary whitespace-pre-wrap">
               {currentQuestion.result}

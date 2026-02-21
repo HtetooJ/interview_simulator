@@ -106,7 +106,7 @@ button[aria-label*="Pause"] {
   opacity: 1 !important;
 }
 
-/* Shimmer animation for scroll-to-record button */
+/* Shimmer animation for scroll-to-record button (legacy, kept for RecordingControls) */
 @keyframes shimmer {
   0%, 100% {
     opacity: 1;
@@ -120,6 +120,17 @@ button[aria-label*="Pause"] {
 
 .animate-shimmer {
   animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Border circle animation for scroll-to-record button - segment travels from top, clockwise, back to top */
+@keyframes borderCircleSpin {
+  from { stroke-dashoffset: 30; }
+  to { stroke-dashoffset: 149; }
+}
+
+.animate-border-circle-dash {
+  animation: borderCircleSpin 1.5s linear forwards;
+  animation-iteration-count: 1;
 }
 
 /* Text shimmer for processing stages - moving gradient */
